@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>澎湖海島假期 2026</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ocean: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            300: '#7dd3fc',
+                            500: '#0284c7',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        sand: {
+                            100: '#fef3c7',
+                            300: '#fde047',
+                            400: '#facc15',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-fontawesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .interactive-link {
+            color: #0284c7;
+            font-weight: 600;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .interactive-link:hover {
+            color: #075985;
+            background-color: #e0f2fe;
+            border-radius: 4px;
+            padding: 0 2px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 pb-12">
+
+    <!-- Header & Weather Banner -->
+    <header class="bg-gradient-to-r from-ocean-800 to-ocean-500 text-white p-6 shadow-md">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold tracking-wide"><i class="fa-solid fa-sun mr-2 text-sand-300"></i>澎湖海島假期</h1>
+                <p class="text-ocean-100 text-sm mt-1">2026/09/23 (三) - 09/26 (六)</p>
+            </div>
+            <!-- Live Weather Box -->
+            <div id="weather-box" class="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 text-right text-xs">
+                <div class="text-sand-300 font-semibold"><i class="fa-solid fa-location-dot"></i> 馬公市天氣</div>
+                <div id="weather-temp" class="text-xl font-bold mt-0.5">載入中...</div>
+                <div id="weather-desc" class="text-ocean-100">--</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+
+        <!-- Dynamic Map Frame (Non-sticky) -->
+        <div id="map-section" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-2 mb-6">
+            <div class="flex justify-between items-center px-3 py-2">
+                <span id="map-title" class="text-xs font-semibold text-ocean-800"><i class="fa-solid fa-map-pin mr-1"></i>景點導航地圖：澎湖縣</span>
+                <span class="text-[10px] text-slate-400">點擊行程文字/清單可切換地圖</span>
+            </div>
+            <div class="relative w-full h-64 rounded-xl overflow-hidden bg-slate-100">
+                <iframe id="map-frame" class="w-full h-full border-0" 
+                    src="https://maps.google.com/maps?q=23.5711,119.5793&z=12&output=embed" 
+                    allowfullscreen="" loading="lazy"></iframe>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs & Tide Button -->
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-6">
+            <div class="flex space-x-2 overflow-x-auto hide-scrollbar mr-2">
+                <button onclick="switchTab('itinerary')" id="tab-itinerary" class="px-3.5 py-2 rounded-lg font-medium text-sm transition-all bg-ocean-500 text-white shadow whitespace-nowrap">
+                    <i class="fa-regular fa-calendar-days mr-1"></i> 每日行程
+                </button>
+                <button onclick="switchTab('food')" id="tab-food" class="px-3.5 py-2 rounded-lg font-medium text-sm transition-all bg-white text-slate-600 hover:bg-slate-100 whitespace-nowrap">
+                    <i class="fa-solid fa-utensils mr-1"></i> 美食地圖
+                </button>
+                <button onclick="switchTab('spots')" id="tab-spots" class="px-3.5 py-2 rounded-lg font-medium text-sm transition-all bg-white text-slate-600 hover:bg-slate-100 whitespace-nowrap">
+                    <i class="fa-solid fa-umbrella-beach mr-1"></i> 沙灘景點
+                </button>
+            </div>
+            <button onclick="openTideModal()" class="px-3.5 py-2 rounded-lg font-bold text-sm transition-all bg-sand-300 text-slate-800 hover:bg-sand-400 shadow-sm shrink-0 flex items-center">
+                <i class="fa-solid fa-water text-ocean-700 mr-1.5"></i>潮汐時刻
+            </button>
+        </div>
+
+        <!-- SECTION 1: Itinerary -->
+        <section id="section-itinerary" class="space-y-6">
+            
+            <!-- Date Filter Sub-tabs -->
+            <div class="flex space-x-2 overflow-x-auto pb-1 hide-scrollbar">
+                <button onclick="filterDay('all')" id="day-btn-all" class="day-btn px-3 py-1.5 rounded-full text-xs font-semibold bg-ocean-800 text-white shadow-sm">全部行程</button>
+                <button onclick="filterDay(1)" id="day-btn-1" class="day-btn px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">09/23 (三) Day 1</button>
+                <button onclick="filterDay(2)" id="day-btn-2" class="day-btn px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">09/24 (四) Day 2</button>
+                <button onclick="filterDay(3)" id="day-btn-3" class="day-btn px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">09/25 (五) Day 3</button>
+                <button onclick="filterDay(4)" id="day-btn-4" class="day-btn px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">09/26 (六) Day 4</button>
+            </div>
+
+            <!-- Day 1 -->
+            <div id="day-card-1" class="day-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h3 class="font-bold text-ocean-800 text-lg">09/23 (三) Day 1：抵達與本島初訪</h3>
+                    <button onclick="openTideModal()" class="text-xs px-2.5 py-1 bg-ocean-50 text-ocean-600 hover:bg-ocean-100 rounded-full font-medium transition-all flex items-center">
+                        <i class="fa-solid fa-water mr-1"></i>通行 11:00-17:00
+                    </button>
+                </div>
+                <ul class="space-y-3 text-sm text-slate-600">
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">06:45</span>
+                        <div>
+                            騎機車🛵到台中國際機場 
+                            (<span class="interactive-link" onclick="updateMapByCoords('台中國際機場機車停車場', 24.2563202, 120.6000302)">機車停車場</span> / 備案：<span class="interactive-link" onclick="updateMapByUrl('萊爾富台中航站店', 'https://maps.app.goo.gl/ZWXSYDXwYFjhfEMb8')">萊爾富附近</span>)
+                        </div>
+                    </li>
+                    <li class="flex items-start"><span class="w-12 font-semibold text-ocean-500 shrink-0">07:30</span> 華信 AE781 🛫 ➜ 08:15 🛬 澎湖</li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">08:30</span>
+                        <div>
+                            機車租車店接駁 ➜ 市區 <span class="interactive-link" onclick="updateMapByUrl('二信飯糰', 'https://maps.app.goo.gl/3aKqadg4HDT1uUTC9')">二信飯糰</span> 買水/飲料<br>
+                            閒晃：<span class="interactive-link" onclick="updateMapByUrl('青螺沙嘴', 'https://maps.app.goo.gl/scVtpNhmqfzjPci56')">青螺沙嘴</span>、<span class="interactive-link" onclick="updateMapByUrl('南寮浮球秘境', 'https://maps.app.goo.gl/M8ZQ5wMmUHZtpF6S6')">南寮</span>、<span class="interactive-link" onclick="updateMapByUrl('奎壁山摩西分海', 'https://maps.app.goo.gl/K81Npd6iHVKPzNQy7')">奎壁山</span>、<span class="interactive-link" onclick="updateMapByUrl('龍門沙灘', 'https://maps.app.goo.gl/1LpKSRiddWvQjEcb9')">龍門沙灘</span>、<span class="interactive-link" onclick="updateMapByUrl('裡正角沙灘', 'https://maps.app.goo.gl/E5Kgx5R4TA85meA17')">裡正角沙灘</span>、<span class="interactive-link" onclick="updateMapByUrl('尖山沙灘', 'https://maps.app.goo.gl/F7apSfHgtueKtXqi7')">尖山沙灘</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">15:00</span>
+                        <div>
+                            Check In <span class="interactive-link" onclick="updateMapByUrl('H&澎湖百慶旅店', 'https://maps.app.goo.gl/MrAkpvrVkcBhEEU47')">H&澎湖百慶旅店</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">18:00</span>
+                        <div>18:00 前買 <span class="interactive-link" onclick="updateMapByUrl('郵局口蔥油餅', 'https://maps.app.goo.gl/yRujz53Kz2ta7Xbt6')">郵局口蔥油餅</span> 回旅館休息，晚餐餓了再出門覓食</div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">23:00</span>
+                        <div>晚一點(11點後)到 <span class="interactive-link" onclick="updateMapByUrl('澎湖第三漁港國際廣場', 'https://maps.app.goo.gl/j6BPZGFAbrTvHoGDA')">澎湖第三漁港國際廣場</span> / 觀音亭 探險</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Day 2 -->
+            <div id="day-card-2" class="day-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h3 class="font-bold text-ocean-800 text-lg">09/24 (四) Day 2：日出與跨海大橋</h3>
+                    <button onclick="openTideModal()" class="text-xs px-2.5 py-1 bg-ocean-50 text-ocean-600 hover:bg-ocean-100 rounded-full font-medium transition-all flex items-center">
+                        <i class="fa-solid fa-water mr-1"></i>通行 12:30-17:30
+                    </button>
+                </div>
+                <ul class="space-y-3 text-sm text-slate-600">
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">05:45</span>
+                        <div><span class="interactive-link" onclick="updateMapByUrl('菓葉觀日樓', 'https://maps.app.goo.gl/LrEGmNfmispM6bom9')">菓葉觀日樓</span> 看日出 ➜ 沙灘踩水：<span class="interactive-link" onclick="updateMapByUrl('尖山沙灘', 'https://maps.app.goo.gl/F7apSfHgtueKtXqi7')">尖山沙灘</span>、<span class="interactive-link" onclick="updateMapByUrl('隘門沙灘', 'https://maps.app.goo.gl/qYTNzuvW3WYTw2Vq9')">隘門沙灘</span></div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">07:00</span>
+                        <div>早餐：<span class="interactive-link" onclick="updateMapByUrl('鐘記燒餅', 'https://maps.app.goo.gl/k7xBpmTw5FrRvq1y6')">鐘記燒餅</span>、<span class="interactive-link" onclick="updateMapByUrl('北新橋牛雜湯', 'https://maps.app.goo.gl/h584S1yR7AJAhpH69')">北新橋牛雜湯</span> ➜ 回民宿吃東西休息</div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">10:00</span>
+                        <div>出發：<span class="interactive-link" onclick="updateMapByUrl('波浪海堤', 'https://maps.app.goo.gl/PZapvnLuyiYUhreS7')">波浪海堤</span> ➜ <span class="interactive-link" onclick="updateMapByUrl('美東芳牛肉麵', 'https://maps.app.goo.gl/SYE82G5B5ew4MbYT7')">美東芳牛肉麵</span> ➜ <span class="interactive-link" onclick="updateMapByUrl('後寮天堂路', 'https://maps.app.goo.gl/jMn8hAtPBpc2sYWZ7')">後寮天堂路</span>/<span class="interactive-link" onclick="updateMapByUrl('後寮沙灘', 'https://maps.app.goo.gl/3adqXjY8XxjvzzEU6')">後寮沙灘</span> ➜ 通梁古榕 ➜ 跨海大橋</div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">13:00</span>
+                        <div>回程：<span class="interactive-link" onclick="updateMapByUrl('回家炸粿', 'https://maps.app.goo.gl/UNxKHnZMyWPGqeXe9')">回家炸粿</span> ➜ <span class="interactive-link" onclick="updateMapByUrl('尖山沙灘', 'https://maps.app.goo.gl/F7apSfHgtueKtXqi7')">尖山沙灘</span></div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">16:00</span>
+                        <div>往風櫃洞 ➜ <span class="interactive-link" onclick="updateMapByUrl('青灣情人海灘', 'https://maps.app.goo.gl/oaXBiLGQKwDjFJSw9')">青灣情人海灘</span> ➜ <span class="interactive-link" onclick="updateMapByUrl('嵵裡沙灘', 'https://maps.app.goo.gl/EPgnpWBfW4sF6Ugk8')">嵵裡沙灘</span> ➜ <span class="interactive-link" onclick="updateMapByUrl('山水沙灘', 'https://maps.app.goo.gl/1wZ4UDCLscURkzMY8')">山水沙灘</span></div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">晚餐</span>
+                        <div>晚餐考慮：<span class="interactive-link" onclick="updateMapByUrl('山水牛肉麵', 'https://maps.app.goo.gl/kXzvaNXYmGoD4h9e7')">山水牛肉麵</span> 或市區 <span class="interactive-link" onclick="updateMapByUrl('馬路益燒肉飯', 'https://maps.app.goo.gl/SPe1fkmvssq8NQrn8')">馬路益燒肉飯</span>、<span class="interactive-link" onclick="updateMapByUrl('玉冠嫩仙草', 'https://maps.app.goo.gl/GBFeSHefeS2aNMHN9')">玉冠嫩仙草</span></div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Day 3 -->
+            <div id="day-card-3" class="day-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h3 class="font-bold text-ocean-800 text-lg">09/25 (五) Day 3：深度北島與夕陽觀星</h3>
+                    <button onclick="openTideModal()" class="text-xs px-2.5 py-1 bg-ocean-50 text-ocean-600 hover:bg-ocean-100 rounded-full font-medium transition-all flex items-center">
+                        <i class="fa-solid fa-water mr-1"></i>通行 13:30-17:30
+                    </button>
+                </div>
+                <ul class="space-y-3 text-sm text-slate-600">
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">08:00</span>
+                        <div><span class="interactive-link" onclick="updateMapByUrl('益豐豆漿', 'https://maps.app.goo.gl/3r7a34G5dwv95uxY8')">益豐豆漿</span> 回民宿吃 ➜ <span class="interactive-link" onclick="updateMapByUrl('隘門沙灘', 'https://maps.app.goo.gl/qYTNzuvW3WYTw2Vq9')">隘門沙灘</span>/<span class="interactive-link" onclick="updateMapByUrl('尖山沙灘', 'https://maps.app.goo.gl/F7apSfHgtueKtXqi7')">尖山沙灘</span> 踏浪玩水曬太陽</div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">11:00</span>
+                        <div>回民宿沖洗 / 去市區吃東西？吃冰（<span class="interactive-link" onclick="updateMapByUrl('紫玉仙草', 'https://maps.app.goo.gl/V59J9oEXxAzvqMmc7')">紫玉仙草</span>）？</div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">13:00</span>
+                        <div>往北島前進：<span class="interactive-link" onclick="updateMapByUrl('小萍的店', 'https://maps.app.goo.gl/6vixKLtHCtwcXLtW6')">小萍的店</span> ➜ <span class="interactive-link" onclick="updateMapByUrl('小門沙灘', 'https://maps.app.goo.gl/saccL4KwGjFK4bCD8')">小門沙灘</span> ➜ 鯨魚洞</div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">14:30</span>
+                        <div>買 <span class="interactive-link" onclick="updateMapByUrl('大池炸粿&鯊魚排', 'https://maps.app.goo.gl/v7VfjYJLLoCuNJCT8')">大池鯊魚排</span> ➜ 閒晃：<span class="interactive-link" onclick="updateMapByUrl('二崁杏仁茶', 'https://maps.app.goo.gl/EmNWFzj7FuQKRoFj9')">二崁</span>、<span class="interactive-link" onclick="updateMapByUrl('池西岩瀑', 'https://maps.app.goo.gl/7rp6rQYMTgBQYopc9')">池西</span>、<span class="interactive-link" onclick="updateMapByUrl('池東大菓葉玄武岩', 'https://maps.app.goo.gl/mjUPWwD6LtpnKEtf6')">池東</span>、<span class="interactive-link" onclick="updateMapByUrl('內垵南漁港', 'https://maps.app.goo.gl/qHRJqdq2DCucPbsR6')">內垵南漁港</span>、<span class="interactive-link" onclick="updateMapByUrl('西嶼東臺', 'https://maps.app.goo.gl/CTXahQEevbL6zBkP8')">西嶼東臺</span></div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">16:00</span>
+                        <div>抵達 <span class="interactive-link" onclick="updateMapByUrl('外垵刈包 福氣早餐店', 'https://maps.app.goo.gl/z5NF99nPuhuVB2kv8')">外垵刈包</span> ➜ <span class="interactive-link" onclick="updateMapByUrl('外垵草原', 'https://maps.app.goo.gl/fDcNet3kUMyBqJnH8')">外垵草原</span> 看日落</div>
+                    </li>
+                    <li class="flex items-start"><span class="w-12 font-semibold text-ocean-500 shrink-0">18:30</span> 回民宿休息</li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">20:00</span>
+                        <div>晚餐：<span class="interactive-link" onclick="updateMapByUrl('阿華漁村海鮮料理', 'https://maps.app.goo.gl/SP6CEc1xcTBbwgcC8')">阿華漁村海鮮料理</span></div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">22:00</span>
+                        <div><span class="interactive-link" onclick="updateMapByUrl('龍門沙灘', 'https://maps.app.goo.gl/1LpKSRiddWvQjEcb9')">龍門沙灘</span> / <span class="interactive-link" onclick="updateMapByUrl('山水30高地公園', 'https://maps.app.goo.gl/98oJ1gMB53jv2rEj9')">山水30高地公園</span> 看星星</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Day 4 -->
+            <div id="day-card-4" class="day-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h3 class="font-bold text-ocean-800 text-lg">09/26 (六) Day 4：最後巡禮與返航</h3>
+                    <span class="text-xs px-2.5 py-1 bg-sand-300 text-slate-800 rounded-full font-medium">返程日</span>
+                </div>
+                <ul class="space-y-3 text-sm text-slate-600">
+                    <li class="flex items-start"><span class="w-12 font-semibold text-ocean-500 shrink-0">08:00</span> 去吃前幾天還想再吃的早餐店</li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">10:00</span>
+                        <div><span class="interactive-link" onclick="updateMapByUrl('尖山沙灘', 'https://maps.app.goo.gl/F7apSfHgtueKtXqi7')">尖山沙灘</span> 或是其他地方玩水</div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="w-12 font-semibold text-ocean-500 shrink-0">11:00</span>
+                        <div>
+                            (退房) ➜ 市區吃吃喝喝
+                            <div class="text-xs text-slate-500 mt-1 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                                <i class="fa-solid fa-circle-info text-ocean-500 mr-1"></i>備註：行李可以先寄放Luka那邊
+                            </div>
+                        </div>
+                    </li>
+                    <li class="flex items-start"><span class="w-12 font-semibold text-ocean-500 shrink-0">13:45</span> 返回機車行搭乘接駁至機場</li>
+                    <li class="flex items-start"><span class="w-12 font-semibold text-ocean-500 shrink-0">14:50</span> 華信 A788 🛫 ➜ 15:30 🛬 台中</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Food Database -->
+        <section id="section-food" class="hidden space-y-4">
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">市區美食</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="food-city"></div>
+            
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mt-6 mb-2">南環美食</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="food-south"></div>
+
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mt-6 mb-2">北環美食</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="food-north"></div>
+        </section>
+
+        <!-- SECTION 3: Spots & Beaches -->
+        <section id="section-spots" class="hidden space-y-4">
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">精選沙灘</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="beach-list"></div>
+
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mt-6 mb-2">熱門景點與秘境</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="spot-list"></div>
+        </section>
+
+    </main>
+
+    <!-- Tide Info Modal -->
+    <div id="tide-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closeTideModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center space-x-2 text-ocean-800 mb-1">
+                <i class="fa-solid fa-water text-ocean-500"></i>
+                <h3 class="font-bold text-base">奎壁山 潮汐預報 (9/23 - 9/27)</h3>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">
+                資料來源：<a href="https://www.penghu-nsa.gov.tw/Services/Tidenew/11509tide.htm" target="_blank" class="text-ocean-500 hover:text-ocean-800 underline font-medium inline-flex items-center">澎湖國家風景區管理處 <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i></a>
+            </p>
+
+            <div class="space-y-2 text-xs">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="flex justify-between font-bold text-ocean-800 mb-1">
+                        <span>09/23 (三)</span>
+                        <span class="text-ocean-500 font-semibold">建議通行 11:00 - 17:00</span>
+                    </div>
+                    <div class="text-slate-600 flex justify-between">
+                        <span>滿潮：08:37</span>
+                        <span class="font-medium text-amber-600">乾潮：15:01</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="flex justify-between font-bold text-ocean-800 mb-1">
+                        <span>09/24 (四)</span>
+                        <span class="text-ocean-500 font-semibold">建議通行 12:30 - 17:30</span>
+                    </div>
+                    <div class="text-slate-600 flex justify-between">
+                        <span>滿潮：09:29</span>
+                        <span class="font-medium text-amber-600">乾潮：15:44</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="flex justify-between font-bold text-ocean-800 mb-1">
+                        <span>09/25 (五)</span>
+                        <span class="text-ocean-500 font-semibold">建議通行 13:30 - 17:30</span>
+                    </div>
+                    <div class="text-slate-600 flex justify-between">
+                        <span>滿潮：10:14</span>
+                        <span class="font-medium text-amber-600">乾潮：16:22</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="flex justify-between font-bold text-ocean-800 mb-1">
+                        <span>09/26 (六)</span>
+                        <span class="text-ocean-500 font-semibold">建議通行 14:00 - 17:30</span>
+                    </div>
+                    <div class="text-slate-600 flex justify-between">
+                        <span>滿潮：10:55</span>
+                        <span class="font-medium text-amber-600">乾潮：16:56</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="flex justify-between font-bold text-ocean-800 mb-1">
+                        <span>09/27 (日)</span>
+                        <span class="text-ocean-500 font-semibold">建議通行 15:00 - 17:30</span>
+                    </div>
+                    <div class="text-slate-600 flex justify-between">
+                        <span>滿潮：11:34</span>
+                        <span class="font-medium text-amber-600">乾潮：17:27</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 p-2.5 bg-amber-50 rounded-xl text-[11px] text-amber-800 border border-amber-200/60">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                <strong>注意事項：</strong>步道開放時間請以現場管制紅綠燈告示為準。
+            </div>
+
+            <button onclick="closeTideModal()" class="w-full mt-4 py-2 bg-ocean-500 hover:bg-ocean-800 text-white font-semibold rounded-xl text-xs transition-all shadow">
+                我知道了
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Data & Logic -->
+    <script>
+        // Open-Meteo Weather API
+        async function fetchWeather() {
+            try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=23.5711&longitude=119.5793&current_weather=true');
+                const data = await res.json();
+                const temp = Math.round(data.current_weather.temperature);
+                const code = data.current_weather.weathercode;
+                
+                document.getElementById('weather-temp').innerText = `${temp}°C`;
+                document.getElementById('weather-desc').innerText = getWeatherDescription(code);
+            } catch (e) {
+                document.getElementById('weather-temp').innerText = '28°C';
+                document.getElementById('weather-desc').innerText = '晴朗海風';
+            }
+        }
+
+        function getWeatherDescription(code) {
+            if (code === 0) return '晴朗無雲';
+            if (code <= 3) return '多雲時晴';
+            if (code <= 65) return '有陣雨';
+            return '微風舒爽';
+        }
+
+        // Smooth Scroll to Map Component
+        function scrollToMap() {
+            const mapSec = document.getElementById('map-section');
+            if (mapSec) {
+                mapSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Modal Controls for Tide Table
+        function openTideModal() {
+            document.getElementById('tide-modal').classList.remove('hidden');
+        }
+
+        function closeTideModal() {
+            document.getElementById('tide-modal').classList.add('hidden');
+        }
+
+        // Tab Switching
+        function switchTab(tab) {
+            ['itinerary', 'food', 'spots'].forEach(t => {
+                document.getElementById(`section-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-${t}`);
+                btn.className = "px-3.5 py-2 rounded-lg font-medium text-sm transition-all bg-white text-slate-600 hover:bg-slate-100 whitespace-nowrap";
+            });
+            document.getElementById(`section-${tab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.className = "px-3.5 py-2 rounded-lg font-medium text-sm transition-all bg-ocean-500 text-white shadow whitespace-nowrap";
+        }
+
+        // Day Filtering for Itinerary
+        function filterDay(day) {
+            document.querySelectorAll('.day-btn').forEach(btn => {
+                btn.className = "day-btn px-3 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-50";
+            });
+
+            if (day === 'all') {
+                document.querySelectorAll('.day-card').forEach(card => card.classList.remove('hidden'));
+                document.getElementById('day-btn-all').className = "day-btn px-3 py-1.5 rounded-full text-xs font-semibold bg-ocean-800 text-white shadow-sm";
+            } else {
+                document.querySelectorAll('.day-card').forEach(card => card.classList.add('hidden'));
+                document.getElementById(`day-card-${day}`).classList.remove('hidden');
+                document.getElementById(`day-btn-${day}`).className = "day-btn px-3 py-1.5 rounded-full text-xs font-semibold bg-ocean-800 text-white shadow-sm";
+            }
+        }
+
+        // Map Focus by Exact Coordinates
+        function updateMapByCoords(name, lat, lng) {
+            document.getElementById('map-title').innerHTML = `<i class="fa-solid fa-map-pin mr-1 text-ocean-500"></i> ${name}`;
+            const src = `https://maps.google.com/maps?q=${lat},${lng}&z=17&output=embed`;
+            document.getElementById('map-frame').src = src;
+            scrollToMap();
+        }
+
+        // Map Location Focus by Custom Title / Query
+        function updateMap(name, query) {
+            document.getElementById('map-title').innerHTML = `<i class="fa-solid fa-map-pin mr-1 text-ocean-500"></i> ${name}`;
+            const src = `https://maps.google.com/maps?q=${encodeURIComponent(query || name)}&z=15&output=embed`;
+            document.getElementById('map-frame').src = src;
+            scrollToMap();
+        }
+
+        // Map Focus by URL Link Search
+        function updateMapByUrl(name, url) {
+            document.getElementById('map-title').innerHTML = `<i class="fa-solid fa-map-pin mr-1 text-ocean-500"></i> ${name}`;
+            const src = `https://maps.google.com/maps?q=${encodeURIComponent(name)}&z=15&output=embed`;
+            document.getElementById('map-frame').src = src;
+            scrollToMap();
+        }
+
+        // Master Data with Exact URL Links
+        const foodCity = [
+            { name: "鐘記燒餅", time: "06:00 - 10:00", item: "干貝蔥蛋加油條", url: "https://maps.app.goo.gl/k7xBpmTw5FrRvq1y6" },
+            { name: "益豐豆漿", time: "05:30 - 11:00", item: "燒餅油條+蔥蛋、無糖豆漿", url: "https://maps.app.goo.gl/3r7a34G5dwv95uxY8" },
+            { name: "北新橋牛雜湯", time: "05:40 - 11:30", item: "牛雜湯", url: "https://maps.app.goo.gl/h584S1yR7AJAhpH69" },
+            { name: "二信飯糰", time: "05:00 - 12:00", item: "小雙色飯糰+無糖豆漿", url: "https://maps.app.goo.gl/3aKqadg4HDT1uUTC9" },
+            { name: "香亭土魠魚羹", time: "05:30 - 13:00", item: "土魠魚羹", url: "https://maps.app.goo.gl/huF9nk5aJyhGBV3G8" },
+            { name: "乾益堂藥膳蛋", time: "09:00 - 17:30", item: "藥膳蛋、豆乾", url: "https://maps.app.goo.gl/k3mtfdL8PHbo2Dxa6" },
+            { name: "蔬脆蛋餅", time: "12:30 - 18:00", item: "葷蔬脆蛋餅", url: "https://maps.app.goo.gl/yrn1aAYrSrEo6s5NA" },
+            { name: "郵局口蔥油餅", time: "14:00 - 18:30", item: "蔥油餅雙蛋", url: "https://maps.app.goo.gl/yRujz53Kz2ta7Xbt6" },
+            { name: "三哥酒釀雞排", time: "14:30 - 20:00", item: "酒釀雞排、雞肉串", url: "https://maps.app.goo.gl/WQQ8dmGyPTMzJL5v6" },
+            { name: "馬路益燒肉飯", time: "11:00-14:15, 16:30-21:15", item: "燒肉併花枝排飯、鮮蚵湯", url: "https://maps.app.goo.gl/SPe1fkmvssq8NQrn8" },
+            { name: "阿華漁村海鮮料理", time: "17:00 - 22:00", item: "海鮮料理 / 無菜單", url: "https://maps.app.goo.gl/SP6CEc1xcTBbwgcC8" },
+            { name: "玉冠嫩仙草", time: "10:00 - 22:00", item: "綜合嫩仙草凍", url: "https://maps.app.goo.gl/GBFeSHefeS2aNMHN9" },
+            { name: "紫玉仙草", time: "12:30 - 18:30 (五六)", item: "八仙冰", url: "https://maps.app.goo.gl/V59J9oEXxAzvqMmc7" }
+        ];
+
+        const foodSouth = [
+            { name: "山水牛肉麵", time: "11:00-14:00, 17:30-20:00", item: "牛三寶麵", url: "https://maps.app.goo.gl/kXzvaNXYmGoD4h9e7" }
+        ];
+
+        const foodNorth = [
+            { name: "美東芳牛肉麵", time: "10:00-14:30, 17:00-19:00", item: "牛肉麵", url: "https://maps.app.goo.gl/SYE82G5B5ew4MbYT7" },
+            { name: "回家炸粿", time: "13:00 - 18:00", item: "雙拼炸粿、牡蠣酥、紫米年糕", url: "https://maps.app.goo.gl/UNxKHnZMyWPGqeXe9" },
+            { name: "小萍的店", time: "10:00 - 16:30", item: "小管絲瓜麵線", url: "https://maps.app.goo.gl/6vixKLtHCtwcXLtW6" },
+            { name: "大池炸粿&鯊魚排", time: "14:30 - 18:00", item: "鯊魚排", url: "https://maps.app.goo.gl/v7VfjYJLLoCuNJCT8" },
+            { name: "二崁杏仁茶", time: "09:30 - 17:00", item: "濃郁杏仁茶", url: "https://maps.app.goo.gl/EmNWFzj7FuQKRoFj9" },
+            { name: "二馬豆花", time: "10:00-12:00, 13:00-18:00", item: "綜合豆花", url: "https://maps.app.goo.gl/ftBJ4oCAR4YxBaaR6" },
+            { name: "外垵刈包 福氣早餐", time: "07:00 - 17:00 (四五)", item: "控肉刈包", url: "https://maps.app.goo.gl/z5NF99nPuhuVB2kv8" }
+        ];
+
+        const beaches = [
+            { name: "青灣情人海灘", tag: "彩色碎玻璃", url: "https://maps.app.goo.gl/oaXBiLGQKwDjFJSw9" },
+            { name: "嵵裡沙灘", tag: "水上活動/細沙", url: "https://maps.app.goo.gl/EPgnpWBfW4sF6Ugk8" },
+            { name: "山水沙灘", tag: "衝浪/景觀", url: "https://maps.app.goo.gl/1wZ4UDCLscURkzMY8" },
+            { name: "青螺沙嘴", tag: "生態/濕地", url: "https://maps.app.goo.gl/scVtpNhmqfzjPci56" },
+            { name: "隘門沙灘", tag: "水上活動/遊憩", url: "https://maps.app.goo.gl/qYTNzuvW3WYTw2Vq9" },
+            { name: "龍門沙灘", tag: "夜間觀星/秘境", url: "https://maps.app.goo.gl/1LpKSRiddWvQjEcb9" },
+            { name: "裡正角沙灘", tag: "靜謐秘境", url: "https://maps.app.goo.gl/E5Kgx5R4TA85meA17" },
+            { name: "尖山沙灘", tag: "野裸裸曬", url: "https://maps.app.goo.gl/F7apSfHgtueKtXqi7" },
+            { name: "後寮沙灘 / 天堂路", tag: "海天一線", url: "https://maps.app.goo.gl/3adqXjY8XxjvzzEU6" },
+            { name: "夢幻沙灘", tag: "退潮限定(14點後)", url: "https://maps.app.goo.gl/JSD86XM3A361e4UV9" },
+            { name: "赤馬沙灘", tag: "夕陽景點", url: "https://maps.app.goo.gl/3Z7Fz2FrNabgaAjQ9" }
+        ];
+
+        const spots = [
+            { name: "菓葉觀日樓", tag: "日出聖地", url: "https://maps.app.goo.gl/LrEGmNfmispM6bom9" },
+            { name: "南寮浮球秘境", tag: "裝置藝術/傳統聚落", url: "https://maps.app.goo.gl/M8ZQ5wMmUHZtpF6S6" },
+            { name: "奎壁山摩西分海", tag: "潮汐步道", url: "https://maps.app.goo.gl/K81Npd6iHVKPzNQy7" },
+            { name: "山水30高地公園", tag: "夜間觀星/俯瞰海岸", url: "https://maps.app.goo.gl/98oJ1gMB53jv2rEj9" },
+            { name: "波浪海堤", tag: "IG打卡秘境", url: "https://maps.app.goo.gl/PZapvnLuyiYUhreS7" },
+            { name: "後寮天堂路", tag: "海天一線步道", url: "https://maps.app.goo.gl/jMn8hAtPBpc2sYWZ7" },
+            { name: "池西岩瀑 (九孔瀑布)", tag: "玄武岩景觀", url: "https://maps.app.goo.gl/7rp6rQYMTgBQYopc9" },
+            { name: "小池角雙曲橋", tag: "海中長橋", url: "https://maps.app.goo.gl/zhEQcEfeHhf6BgKe9" },
+            { name: "池東大菓葉玄武岩", tag: "壯麗柱狀玄武岩", url: "https://maps.app.goo.gl/mjUPWwD6LtpnKEtf6" },
+            { name: "內垵南漁港 彩色消波塊", tag: "彩色消波塊", url: "https://maps.app.goo.gl/qHRJqdq2DCucPbsR6" },
+            { name: "西嶼東臺", tag: "古蹟巡禮", url: "https://maps.app.goo.gl/CTXahQEevbL6zBkP8" },
+            { name: "外垵草原", tag: "台版直布羅陀/夕陽", url: "https://maps.app.goo.gl/fDcNet3kUMyBqJnH8" },
+            { name: "澎湖第三漁港國際廣場", tag: "夜間探險", url: "https://maps.app.goo.gl/j6BPZGFAbrTvHoGDA" }
+        ];
+
+        // Render Card Items
+        function renderCards(list, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = list.map(item => `
+                <div onclick="updateMapByUrl('${item.name}', '${item.url}')" class="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm hover:border-ocean-300 transition-all cursor-pointer flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-slate-800 text-sm">${item.name}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">${item.item || item.tag}</div>
+                        ${item.time ? `<div class="text-[10px] text-ocean-500 mt-1"><i class="fa-regular fa-clock"></i> ${item.time}</div>` : ''}
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <a href="${item.url}" target="_blank" onclick="event.stopPropagation()" class="text-xs text-ocean-500 hover:text-ocean-800 p-1">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize Page
+        window.onload = () => {
+            fetchWeather();
+            renderCards(foodCity, 'food-city');
+            renderCards(foodSouth, 'food-south');
+            renderCards(foodNorth, 'food-north');
+            renderCards(beaches, 'beach-list');
+            renderCards(spots, 'spot-list');
+        };
+    </script>
+</body>
+</html>
